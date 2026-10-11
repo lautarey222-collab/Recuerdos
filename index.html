@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#ff5f86">
+<title>Nuestra historia ❤️</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="corazones-fondo" aria-hidden="true"><span>❤️</span><span>💕</span><span>💗</span><span>💖</span><span>❤️</span><span>💕</span><span>💗</span><span>💖</span></div>
+
+<header class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-contenido">
+    <div class="hero-top">
+      <span class="badge">🔒 Nuestro rincón privado</span>
+      <button id="btnTema" class="btn-icono" type="button" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
+    </div>
+    <div class="hero-texto">
+      <p class="eyebrow">UNA HISTORIA QUE SIGUE CRECIENDO</p>
+      <h1>Nuestra historia <span>❤️</span></h1>
+      <p>Todos esos pequeños momentos que juntos hicieron algo enorme.</p>
+    </div>
+    <div class="hero-stats">
+      <div><strong id="statRecuerdos">0</strong><span>recuerdos</span></div>
+      <div><strong id="statLugares">0</strong><span>lugares</span></div>
+      <div><strong id="statDesde">—</strong><span>desde</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="contenedor">
+  <section class="contador-amor">
+    <div class="contador-corazon">❤️</div>
+    <div class="contador-cuerpo">
+      <p class="eyebrow">NOSOTROS</p>
+      <h2>Juntos desde el 11 de noviembre de 2025</h2>
+      <p class="contador-sub">Y seguimos sumando tiempo, recuerdos y momentos.</p>
+      <div class="contador-grid">
+        <div><strong id="mesesJuntos">0</strong><span>meses</span></div>
+        <div><strong id="diasJuntos">0</strong><span>días</span></div>
+        <div><strong id="horasJuntos">0</strong><span>horas</span></div>
+        <div><strong id="minutosJuntos">0</strong><span>minutos</span></div>
+        <div><strong id="segundosJuntos">0</strong><span>segundos</span></div>
+      </div>
+      <small>✨ Y contando...</small>
+    </div>
+  </section>
+
+  <section class="presentacion">
+    <div><p class="eyebrow">NUESTROS MOMENTOS</p><h2>Un lugar para guardar lo que no queremos olvidar.</h2></div>
+    <p>Cada recuerdo tiene una fecha, un lugar y una historia. Acá queda guardado todo lo nuestro. 💕</p>
+  </section>
+
+  <section id="loginSeccion" class="login-seccion oculto">
+    <div class="modal-caja compacta">
+      <div class="modal-cabecera"><div><span class="modal-icono">🔐</span><h2>Panel privado</h2></div><button id="btnCerrarLogin" class="btn-cerrar" type="button">×</button></div>
+      <p>Ingresá con tu cuenta de administrador para agregar o editar recuerdos.</p>
+      <form id="formLogin">
+        <div class="campo"><label for="emailLogin">📧 Correo electrónico</label><input type="email" id="emailLogin" autocomplete="email" required></div>
+        <div class="campo"><label for="passwordLogin">🔑 Contraseña</label><input type="password" id="passwordLogin" autocomplete="current-password" required></div>
+        <div id="mensajeLogin" class="mensaje-login"></div>
+        <div class="botones-formulario"><button type="button" id="btnCancelarLogin" class="btn-secundario">Cancelar</button><button type="submit" id="btnIngresar" class="btn-principal">🔐 Ingresar</button></div>
+      </form>
+    </div>
+  </section>
+
+  <section id="panelAdmin" class="panel-admin oculto">
+    <div><strong>🔐 Panel privado ❤️</strong><span id="emailAdministrador"></span></div>
+    <button id="btnCerrarSesion" type="button" class="btn-cerrar-sesion">Cerrar sesión</button>
+  </section>
+
+  <section id="formularioSeccion" class="formulario-seccion oculto">
+    <div class="modal-caja">
+      <div class="modal-cabecera"><div><span class="modal-icono">💕</span><h2 id="tituloFormulario">Nuevo recuerdo</h2></div><button id="btnCerrarFormulario" class="btn-cerrar" type="button">×</button></div>
+      <form id="formRecuerdo">
+        <div class="form-grid">
+          <div class="campo campo-ancho"><label for="titulo">💌 Título</label><input type="text" id="titulo" placeholder="Ej: Nuestro primer viaje" maxlength="100" required></div>
+          <div class="campo"><label for="fecha">📅 Fecha</label><input type="date" id="fecha" required></div>
+          <div class="campo"><label for="ubicacion">📍 Lugar</label><input type="text" id="ubicacion" placeholder="Ej: Córdoba, Argentina" required></div>
+          <div class="campo campo-ancho"><label for="descripcion">📝 Historia</label><textarea id="descripcion" rows="5" placeholder="Escribí algo lindo sobre este momento..." required></textarea></div>
+          <div class="campo campo-ancho"><label class="check-favorito"><input type="checkbox" id="favorito"> <span>❤️ Marcar como favorito</span></label></div>
+          <div class="campo campo-ancho"><label for="archivos">📸🎥 Fotos y videos</label><p class="ayuda">Podés guardar hasta 3 archivos por recuerdo, mezclando fotos y videos.</p><input type="file" id="archivos" accept="image/*,video/*" multiple><div id="vistaPrevia" class="vista-previa"></div></div>
+        </div>
+        <div class="botones-formulario"><button type="button" id="btnCancelar" class="btn-secundario">Cancelar</button><button type="submit" id="btnGuardar" class="btn-principal">❤️ Guardar recuerdo</button></div>
+        <div id="progresoCarga" class="progreso-wrap oculto"><div class="progreso-barra"><span id="progresoBarra"></span></div><small id="progresoTexto">Preparando...</small></div>
+      </form>
+    </div>
+  </section>
+
+  <section class="herramientas">
+    <div class="vista-toggle"><button id="btnGaleria" class="activo" type="button">▦ Galería</button><button id="btnTimeline" type="button">♡ Línea de tiempo</button></div>
+    <div class="busqueda"><span>⌕</span><input id="buscador" type="search" placeholder="Buscar recuerdos, lugares o historias..."></div>
+    <div class="filtros"><select id="filtroAnio"><option value="todos">Todos los años</option></select><button id="btnFavoritos" type="button">❤️ Favoritos</button><button id="btnLogin" class="btn-admin" type="button">🔐 Administrar</button><button id="btnNuevoRecuerdo" class="btn-principal admin-solo oculto" type="button">+ Agregar recuerdo</button></div>
+  </section>
+
+  <section class="recuerdos-seccion">
+    <div class="titulo-lista"><div><p class="eyebrow">ÁLBUM</p><h2>Todos nuestros recuerdos</h2></div><span id="cantidadRecuerdos" class="contador">0 recuerdos</span></div>
+    <div id="listaRecuerdos" class="lista-recuerdos"></div>
+    <div id="paginacion" class="paginacion"></div>
+  </section>
+</main>
+
+<div id="visor" class="visor oculto" role="dialog" aria-modal="true" aria-label="Visor de recuerdos">
+  <button id="visorCerrar" class="visor-cerrar" type="button">×</button><button id="visorAnterior" class="visor-flecha anterior" type="button">‹</button>
+  <div class="visor-contenido"><div id="visorMedia"></div><div id="visorPie"><strong id="visorTitulo"></strong><span id="visorContador"></span></div></div>
+  <button id="visorSiguiente" class="visor-flecha siguiente" type="button">›</button>
+</div>
+
+<div id="confirmModal" class="visor oculto"><div class="confirm-caja"><div class="modal-icono">🗑️</div><h2>¿Eliminar recuerdo?</h2><p>Esta acción no se puede deshacer.</p><div class="botones-formulario"><button id="confirmNo" class="btn-secundario" type="button">Cancelar</button><button id="confirmYes" class="btn-peligro" type="button">Eliminar</button></div></div></div>
+
+<div id="toast" class="toast"></div>
+<footer><p>Hecho con ❤️ para guardar nuestra historia.</p></footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+</body>
+</html>

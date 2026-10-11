@@ -1,0 +1,2458 @@
+/* =====================================================
+   SUPABASE
+===================================================== */
+
+// TU URL DE SUPABASE
+const SUPABASE_URL =
+    "https://ighgiwyxkhfvhincpxgn.supabase.co";
+
+// TU CLAVE PUBLICABLE
+const SUPABASE_KEY =
+    "sb_publishable_Nph49yok52kT3KoObCdD8Q_nfshWRPx";
+
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+/* =====================================================
+   CONFIGURACIÓN
+===================================================== */
+
+const NOMBRE_BUCKET = "recuerdos";
+
+const RECUERDOS_POR_PAGINA = 8;
+
+let recuerdos = [];
+
+let paginaActual = 1;
+
+let recuerdoEditando = null;
+
+let archivosSeleccionados = [];
+
+let archivosExistentes = [];
+
+let usuarioActual = null;
+
+
+/* =====================================================
+   ELEMENTOS HTML
+===================================================== */
+
+// RECUERDOS
+
+const formularioSeccion =
+    document.getElementById("formularioSeccion");
+
+const formRecuerdo =
+    document.getElementById("formRecuerdo");
+
+const btnNuevoRecuerdo =
+    document.getElementById("btnNuevoRecuerdo");
+
+const btnCerrarFormulario =
+    document.getElementById("btnCerrarFormulario");
+
+const btnCancelar =
+    document.getElementById("btnCancelar");
+
+const btnGuardar =
+    document.getElementById("btnGuardar");
+
+const tituloFormulario =
+    document.getElementById("tituloFormulario");
+
+const fechaInput =
+    document.getElementById("fecha");
+
+const ubicacionInput =
+    document.getElementById("ubicacion");
+
+const descripcionInput =
+    document.getElementById("descripcion");
+
+const archivosInput =
+    document.getElementById("archivos");
+
+const vistaPrevia =
+    document.getElementById("vistaPrevia");
+
+const listaRecuerdos =
+    document.getElementById("listaRecuerdos");
+
+const cantidadRecuerdos =
+    document.getElementById("cantidadRecuerdos");
+
+const paginacion =
+    document.getElementById("paginacion");
+
+
+// LOGIN
+
+const btnLogin =
+    document.getElementById("btnLogin");
+
+const loginSeccion =
+    document.getElementById("loginSeccion");
+
+const btnCerrarLogin =
+    document.getElementById("btnCerrarLogin");
+
+const btnCancelarLogin =
+    document.getElementById("btnCancelarLogin");
+
+const formLogin =
+    document.getElementById("formLogin");
+
+const emailLogin =
+    document.getElementById("emailLogin");
+
+const passwordLogin =
+    document.getElementById("passwordLogin");
+
+const mensajeLogin =
+    document.getElementById("mensajeLogin");
+
+const panelAdmin =
+    document.getElementById("panelAdmin");
+
+const emailAdministrador =
+    document.getElementById("emailAdministrador");
+
+const btnCerrarSesion =
+    document.getElementById("btnCerrarSesion");
+
+
+/* =====================================================
+   INICIAR
+===================================================== */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    iniciar
+);
+
+
+async function iniciar() {
+
+    mostrarCargando();
+
+    await iniciarAutenticacion();
+
+    await cargarRecuerdos();
+}
+
+
+/* =====================================================
+   AUTENTICACIÓN
+===================================================== */
+
+async function iniciarAutenticacion() {
+
+    try {
+
+        const {
+            data: {
+                session
+            }
+        } =
+            await supabaseClient
+                .auth
+                .getSession();
+
+
+        if (session) {
+
+            usuarioActual =
+                session.user;
+
+            activarModoAdministrador();
+
+        } else {
+
+            usuarioActual = null;
+
+            desactivarModoAdministrador();
+        }
+
+
+        supabaseClient
+            .auth
+            .onAuthStateChange(
+                (_event, sessionActual) => {
+
+                    if (sessionActual) {
+
+                        usuarioActual =
+                            sessionActual.user;
+
+                        activarModoAdministrador();
+
+                    } else {
+
+                        usuarioActual = null;
+
+                        desactivarModoAdministrador();
+                    }
+
+                }
+            );
+
+
+    } catch (error) {
+
+        console.error(
+            "Error iniciando autenticación:",
+            error
+        );
+
+        usuarioActual = null;
+
+        desactivarModoAdministrador();
+    }
+}
+
+
+/* =====================================================
+   ABRIR LOGIN
+===================================================== */
+
+function abrirLogin() {
+
+    mensajeLogin.textContent = "";
+
+    mensajeLogin.className =
+        "mensaje-login";
+
+    emailLogin.value = "";
+
+    passwordLogin.value = "";
+
+    loginSeccion.classList.remove(
+        "oculto"
+    );
+
+    loginSeccion.scrollIntoView({
+        behavior: "smooth"
+    });
+
+
+    setTimeout(
+        () => {
+
+            emailLogin.focus();
+
+        },
+        300
+    );
+}
+
+
+/* =====================================================
+   CERRAR LOGIN
+===================================================== */
+
+function cerrarLogin() {
+
+    loginSeccion.classList.add(
+        "oculto"
+    );
+
+    formLogin.reset();
+
+    mensajeLogin.textContent = "";
+
+    mensajeLogin.className =
+        "mensaje-login";
+}
+
+
+/* =====================================================
+   ACTIVAR MODO ADMINISTRADOR
+===================================================== */
+
+function activarModoAdministrador() {
+
+    btnLogin.classList.add(
+        "oculto"
+    );
+
+
+    btnNuevoRecuerdo.classList.remove(
+        "oculto"
+    );
+
+
+    panelAdmin.classList.remove(
+        "oculto"
+    );
+
+
+    if (usuarioActual) {
+
+        emailAdministrador.textContent =
+            usuarioActual.email || "";
+    }
+
+
+    mostrarRecuerdos();
+}
+
+
+/* =====================================================
+   DESACTIVAR MODO ADMINISTRADOR
+===================================================== */
+
+function desactivarModoAdministrador() {
+
+    btnLogin.classList.remove(
+        "oculto"
+    );
+
+
+    btnNuevoRecuerdo.classList.add(
+        "oculto"
+    );
+
+
+    panelAdmin.classList.add(
+        "oculto"
+    );
+
+
+    formularioSeccion.classList.add(
+        "oculto"
+    );
+
+
+    emailAdministrador.textContent =
+        "";
+
+
+    mostrarRecuerdos();
+}
+
+
+/* =====================================================
+   EVENTOS LOGIN
+===================================================== */
+
+btnLogin.addEventListener(
+    "click",
+    abrirLogin
+);
+
+btnCerrarLogin.addEventListener(
+    "click",
+    cerrarLogin
+);
+
+btnCancelarLogin.addEventListener(
+    "click",
+    cerrarLogin
+);
+
+
+/* =====================================================
+   INICIAR SESIÓN
+===================================================== */
+
+formLogin.addEventListener(
+    "submit",
+    iniciarSesion
+);
+
+
+async function iniciarSesion(event) {
+
+    event.preventDefault();
+
+
+    const email =
+        emailLogin.value.trim();
+
+    const password =
+        passwordLogin.value;
+
+
+    if (!email || !password) {
+
+        mensajeLogin.textContent =
+            "⚠️ Completá el correo y la contraseña.";
+
+        mensajeLogin.className =
+            "mensaje-login error";
+
+        return;
+    }
+
+
+    const btnIngresar =
+        document.getElementById(
+            "btnIngresar"
+        );
+
+
+    btnIngresar.disabled = true;
+
+    btnIngresar.textContent =
+        "⏳ Ingresando...";
+
+
+    mensajeLogin.textContent =
+        "";
+
+
+    try {
+
+        const {
+            data,
+            error
+        } =
+            await supabaseClient
+                .auth
+                .signInWithPassword({
+
+                    email: email,
+
+                    password: password
+
+                });
+
+
+        if (error) {
+
+            console.error(
+                "Error de inicio de sesión:",
+                error
+            );
+
+            mensajeLogin.textContent =
+                "❌ Correo o contraseña incorrectos.";
+
+            mensajeLogin.className =
+                "mensaje-login error";
+
+            return;
+        }
+
+
+        if (data.session) {
+
+            usuarioActual =
+                data.session.user;
+
+            mensajeLogin.textContent =
+                "✅ Inicio de sesión correcto.";
+
+            mensajeLogin.className =
+                "mensaje-login correcto";
+
+
+            activarModoAdministrador();
+
+
+            setTimeout(
+                () => {
+
+                    cerrarLogin();
+
+                },
+                500
+            );
+        }
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        mensajeLogin.textContent =
+            "❌ Ocurrió un error al iniciar sesión.";
+
+        mensajeLogin.className =
+            "mensaje-login error";
+
+    } finally {
+
+        btnIngresar.disabled = false;
+
+        btnIngresar.textContent =
+            "🔐 Ingresar";
+    }
+}
+
+
+/* =====================================================
+   CERRAR SESIÓN
+===================================================== */
+
+btnCerrarSesion.addEventListener(
+    "click",
+    cerrarSesion
+);
+
+
+async function cerrarSesion() {
+
+    const confirmar =
+        confirm(
+            "¿Querés cerrar la sesión de administrador? ❤️"
+        );
+
+
+    if (!confirmar) {
+        return;
+    }
+
+
+    try {
+
+        const {
+            error
+        } =
+            await supabaseClient
+                .auth
+                .signOut();
+
+
+        if (error) {
+
+            throw error;
+        }
+
+
+        usuarioActual = null;
+
+        cerrarFormulario();
+
+        desactivarModoAdministrador();
+
+
+    } catch (error) {
+
+        console.error(
+            "Error cerrando sesión:",
+            error
+        );
+
+        alert(
+            "❌ No se pudo cerrar la sesión."
+        );
+    }
+}
+
+
+/* =====================================================
+   CARGAR RECUERDOS DESDE SUPABASE
+===================================================== */
+
+async function cargarRecuerdos() {
+
+    const {
+        data,
+        error
+    } =
+        await supabaseClient
+            .from("recuerdos")
+            .select("*")
+            .order(
+                "fecha",
+                {
+                    ascending: false
+                }
+            );
+
+
+    if (error) {
+
+        console.error(
+            "Error cargando recuerdos:",
+            error
+        );
+
+
+        listaRecuerdos.innerHTML = `
+
+            <div class="sin-recuerdos">
+
+                <h3>
+                    ❌ No se pudieron cargar los recuerdos
+                </h3>
+
+                <p>
+                    ${escapeHTML(error.message)}
+                </p>
+
+            </div>
+
+        `;
+
+        return;
+    }
+
+
+    recuerdos =
+        data || [];
+
+
+    paginaActual = 1;
+
+
+    mostrarRecuerdos();
+}
+
+
+/* =====================================================
+   MOSTRAR CARGANDO
+===================================================== */
+
+function mostrarCargando() {
+
+    listaRecuerdos.innerHTML = `
+
+        <div class="cargando">
+
+            ❤️ Cargando nuestros recuerdos...
+
+        </div>
+
+    `;
+}
+
+
+/* =====================================================
+   MOSTRAR RECUERDOS
+===================================================== */
+
+function mostrarRecuerdos() {
+
+    if (!listaRecuerdos) {
+        return;
+    }
+
+
+    listaRecuerdos.innerHTML = "";
+
+
+    cantidadRecuerdos.textContent =
+        recuerdos.length === 1
+            ? "1 recuerdo"
+            : `${recuerdos.length} recuerdos`;
+
+
+    if (recuerdos.length === 0) {
+
+        listaRecuerdos.innerHTML = `
+
+            <div class="sin-recuerdos">
+
+                <h3>
+                    💕 Todavía no hay recuerdos
+                </h3>
+
+                <p>
+                    Agregá nuestro primer momento
+                    usando el botón de arriba.
+                </p>
+
+            </div>
+
+        `;
+
+
+        paginacion.innerHTML = "";
+
+        return;
+    }
+
+
+    const inicio =
+        (paginaActual - 1) *
+        RECUERDOS_POR_PAGINA;
+
+
+    const fin =
+        inicio +
+        RECUERDOS_POR_PAGINA;
+
+
+    const recuerdosPagina =
+        recuerdos.slice(
+            inicio,
+            fin
+        );
+
+
+    recuerdosPagina.forEach(
+        recuerdo => {
+
+            const tarjeta =
+                crearTarjetaRecuerdo(
+                    recuerdo
+                );
+
+
+            listaRecuerdos.appendChild(
+                tarjeta
+            );
+
+        }
+    );
+
+
+    mostrarPaginacion();
+}
+
+
+/* =====================================================
+   CREAR TARJETA
+===================================================== */
+
+function crearTarjetaRecuerdo(
+    recuerdo
+) {
+
+    const tarjeta =
+        document.createElement(
+            "article"
+        );
+
+
+    tarjeta.className =
+        "recuerdo";
+
+
+    const archivos =
+        Array.isArray(
+            recuerdo.archivos
+        )
+            ? recuerdo.archivos
+            : [];
+
+
+    let multimediaHTML = "";
+
+
+    if (
+        archivos.length > 0
+    ) {
+
+        let claseGrid = "uno";
+
+
+        if (
+            archivos.length === 2
+        ) {
+
+            claseGrid = "dos";
+        }
+
+
+        if (
+            archivos.length === 3
+        ) {
+
+            claseGrid = "tres";
+        }
+
+
+        multimediaHTML = `
+
+            <div class="recuerdo-media">
+
+                <div
+                    class="media-grid ${claseGrid}"
+                >
+
+                    ${archivos
+                        .map(
+                            archivo =>
+                                crearMediaHTML(
+                                    archivo
+                                )
+                        )
+                        .join("")}
+
+                </div>
+
+
+                <div class="corazon-tarjeta">
+                    ❤️
+                </div>
+
+            </div>
+
+        `;
+
+    } else {
+
+        multimediaHTML = `
+
+            <div class="recuerdo-media">
+
+                <div
+                    style="
+                        height:180px;
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                        font-size:60px;
+                    "
+                >
+                    ❤️
+                </div>
+
+            </div>
+
+        `;
+    }
+
+
+    /* =================================================
+       BOTONES ADMIN
+    ================================================= */
+
+    let botonesAdminHTML = "";
+
+
+    if (usuarioActual) {
+
+        botonesAdminHTML = `
+
+            <div class="recuerdo-botones">
+
+                <button
+                    class="btn-editar"
+                    data-id="${recuerdo.id}"
+                >
+                    ✏️ Editar
+                </button>
+
+
+                <button
+                    class="btn-eliminar"
+                    data-id="${recuerdo.id}"
+                >
+                    🗑️ Eliminar
+                </button>
+
+            </div>
+
+        `;
+    }
+
+
+    tarjeta.innerHTML = `
+
+        ${multimediaHTML}
+
+
+        <div class="recuerdo-info">
+
+            <div class="recuerdo-fecha">
+
+                📅
+                ${formatearFecha(
+                    recuerdo.fecha
+                )}
+
+            </div>
+
+
+            <div class="recuerdo-ubicacion">
+
+                📍
+                ${escapeHTML(
+                    recuerdo.ubicacion || ""
+                )}
+
+            </div>
+
+
+            <div class="recuerdo-descripcion">
+
+                ${escapeHTML(
+                    recuerdo.descripcion || ""
+                )}
+
+            </div>
+
+
+            ${botonesAdminHTML}
+
+        </div>
+
+    `;
+
+
+    /* =================================================
+       EVENTOS ADMIN
+    ================================================= */
+
+    if (usuarioActual) {
+
+        const btnEditar =
+            tarjeta.querySelector(
+                ".btn-editar"
+            );
+
+
+        const btnEliminar =
+            tarjeta.querySelector(
+                ".btn-eliminar"
+            );
+
+
+        if (btnEditar) {
+
+            btnEditar.addEventListener(
+                "click",
+                () =>
+                    editarRecuerdo(
+                        recuerdo
+                    )
+            );
+        }
+
+
+        if (btnEliminar) {
+
+            btnEliminar.addEventListener(
+                "click",
+                () =>
+                    eliminarRecuerdo(
+                        recuerdo
+                    )
+            );
+        }
+    }
+
+
+    return tarjeta;
+}
+
+
+/* =====================================================
+   CREAR HTML MULTIMEDIA
+===================================================== */
+
+function crearMediaHTML(
+    archivo
+) {
+
+    if (
+        !archivo ||
+        !archivo.url
+    ) {
+
+        return "";
+    }
+
+
+    const url =
+        escapeAttribute(
+            archivo.url
+        );
+
+
+    if (
+        archivo.tipo === "video"
+    ) {
+
+        return `
+
+            <div class="media-item">
+
+                <video
+                    src="${url}"
+                    controls
+                    preload="metadata"
+                ></video>
+
+            </div>
+
+        `;
+    }
+
+
+    return `
+
+        <div class="media-item">
+
+            <img
+                src="${url}"
+                alt="Recuerdo"
+                loading="lazy"
+            >
+
+        </div>
+
+    `;
+}
+
+
+/* =====================================================
+   NUEVO RECUERDO
+===================================================== */
+
+btnNuevoRecuerdo.addEventListener(
+    "click",
+    abrirFormularioNuevo
+);
+
+
+function abrirFormularioNuevo() {
+
+    if (!usuarioActual) {
+
+        abrirLogin();
+
+        return;
+    }
+
+
+    recuerdoEditando = null;
+
+    archivosSeleccionados = [];
+
+    archivosExistentes = [];
+
+
+    formRecuerdo.reset();
+
+
+    tituloFormulario.textContent =
+        "💕 Nuevo recuerdo";
+
+
+    btnGuardar.textContent =
+        "❤️ Guardar recuerdo";
+
+
+    vistaPrevia.innerHTML = "";
+
+
+    formularioSeccion.classList.remove(
+        "oculto"
+    );
+
+
+    formularioSeccion.scrollIntoView({
+        behavior: "smooth"
+    });
+}
+
+
+/* =====================================================
+   CERRAR FORMULARIO
+===================================================== */
+
+btnCerrarFormulario.addEventListener(
+    "click",
+    cerrarFormulario
+);
+
+btnCancelar.addEventListener(
+    "click",
+    cerrarFormulario
+);
+
+
+function cerrarFormulario() {
+
+    formularioSeccion.classList.add(
+        "oculto"
+    );
+
+
+    recuerdoEditando = null;
+
+    archivosSeleccionados = [];
+
+    archivosExistentes = [];
+
+
+    formRecuerdo.reset();
+
+    vistaPrevia.innerHTML = "";
+}
+
+
+/* =====================================================
+   SELECCIONAR ARCHIVOS
+===================================================== */
+
+archivosInput.addEventListener(
+    "change",
+    manejarSeleccionArchivos
+);
+
+
+function manejarSeleccionArchivos(
+    event
+) {
+
+    const nuevos =
+        Array.from(
+            event.target.files
+        );
+
+
+    if (
+        nuevos.length === 0
+    ) {
+
+        return;
+    }
+
+
+    const cantidadActual =
+        archivosExistentes.length +
+        archivosSeleccionados.length;
+
+
+    const disponibles =
+        3 -
+        cantidadActual;
+
+
+    if (
+        disponibles <= 0
+    ) {
+
+        alert(
+            "❤️ Máximo 3 archivos por recuerdo."
+        );
+
+
+        archivosInput.value = "";
+
+        return;
+    }
+
+
+    const archivosParaAgregar =
+        nuevos.slice(
+            0,
+            disponibles
+        );
+
+
+    if (
+        nuevos.length >
+        disponibles
+    ) {
+
+        alert(
+            "❤️ Solo podés tener hasta 3 archivos por recuerdo."
+        );
+    }
+
+
+    archivosSeleccionados.push(
+        ...archivosParaAgregar
+    );
+
+
+    archivosInput.value = "";
+
+
+    mostrarVistaPrevia();
+}
+
+
+/* =====================================================
+   VISTA PREVIA
+===================================================== */
+
+function mostrarVistaPrevia() {
+
+    vistaPrevia.innerHTML = "";
+
+
+    /* ARCHIVOS EXISTENTES */
+
+    archivosExistentes.forEach(
+        (
+            archivo,
+            indice
+        ) => {
+
+            const elemento =
+                crearPreviewExistente(
+                    archivo,
+                    indice
+                );
+
+
+            vistaPrevia.appendChild(
+                elemento
+            );
+
+        }
+    );
+
+
+    /* ARCHIVOS NUEVOS */
+
+    archivosSeleccionados.forEach(
+        (
+            archivo,
+            indice
+        ) => {
+
+            const elemento =
+                crearPreviewNuevo(
+                    archivo,
+                    indice
+                );
+
+
+            vistaPrevia.appendChild(
+                elemento
+            );
+
+        }
+    );
+}
+
+
+/* =====================================================
+   PREVIEW EXISTENTE
+===================================================== */
+
+function crearPreviewExistente(
+    archivo,
+    indice
+) {
+
+    const contenedor =
+        document.createElement(
+            "div"
+        );
+
+
+    contenedor.className =
+        "preview-item";
+
+
+    if (
+        archivo.tipo === "video"
+    ) {
+
+        contenedor.innerHTML = `
+
+            <video
+                src="${escapeAttribute(
+                    archivo.url
+                )}"
+                controls
+            ></video>
+
+
+            <button
+                type="button"
+                class="preview-eliminar"
+            >
+                ×
+            </button>
+
+        `;
+
+    } else {
+
+        contenedor.innerHTML = `
+
+            <img
+                src="${escapeAttribute(
+                    archivo.url
+                )}"
+                alt="Vista previa"
+            >
+
+
+            <button
+                type="button"
+                class="preview-eliminar"
+            >
+                ×
+            </button>
+
+        `;
+    }
+
+
+    contenedor
+        .querySelector(
+            ".preview-eliminar"
+        )
+        .addEventListener(
+            "click",
+            () => {
+
+                archivosExistentes.splice(
+                    indice,
+                    1
+                );
+
+
+                mostrarVistaPrevia();
+            }
+        );
+
+
+    return contenedor;
+}
+
+
+/* =====================================================
+   PREVIEW NUEVO
+===================================================== */
+
+function crearPreviewNuevo(
+    archivo,
+    indice
+) {
+
+    const contenedor =
+        document.createElement(
+            "div"
+        );
+
+
+    contenedor.className =
+        "preview-item";
+
+
+    const url =
+        URL.createObjectURL(
+            archivo
+        );
+
+
+    if (
+        archivo.type.startsWith(
+            "video/"
+        )
+    ) {
+
+        contenedor.innerHTML = `
+
+            <video
+                src="${url}"
+                controls
+            ></video>
+
+
+            <button
+                type="button"
+                class="preview-eliminar"
+            >
+                ×
+            </button>
+
+        `;
+
+    } else {
+
+        contenedor.innerHTML = `
+
+            <img
+                src="${url}"
+                alt="Vista previa"
+            >
+
+
+            <button
+                type="button"
+                class="preview-eliminar"
+            >
+                ×
+            </button>
+
+        `;
+    }
+
+
+    contenedor
+        .querySelector(
+            ".preview-eliminar"
+        )
+        .addEventListener(
+            "click",
+            () => {
+
+                URL.revokeObjectURL(url);
+
+
+                archivosSeleccionados.splice(
+                    indice,
+                    1
+                );
+
+
+                mostrarVistaPrevia();
+            }
+        );
+
+
+    return contenedor;
+}
+
+
+/* =====================================================
+   GUARDAR
+===================================================== */
+
+formRecuerdo.addEventListener(
+    "submit",
+    guardarRecuerdo
+);
+
+
+async function guardarRecuerdo(
+    event
+) {
+
+    event.preventDefault();
+
+
+    console.log(
+        "================================="
+    );
+
+    console.log(
+        "BOTÓN GUARDAR PRESIONADO"
+    );
+
+    console.log(
+        "Usuario actual:",
+        usuarioActual
+    );
+
+    console.log(
+        "================================="
+    );
+
+
+    /* SEGURIDAD */
+
+    if (!usuarioActual) {
+
+        alert(
+            "🔐 Tenés que iniciar sesión para guardar recuerdos."
+        );
+
+        abrirLogin();
+
+        return;
+    }
+
+
+    const fecha =
+        fechaInput.value;
+
+    const ubicacion =
+        ubicacionInput.value.trim();
+
+    const descripcion =
+        descripcionInput.value.trim();
+
+
+    console.log(
+        "Datos del formulario:",
+        {
+            fecha,
+            ubicacion,
+            descripcion
+        }
+    );
+
+
+    if (!fecha) {
+
+        alert(
+            "📅 Elegí una fecha."
+        );
+
+        return;
+    }
+
+
+    if (!ubicacion) {
+
+        alert(
+            "📍 Escribí una ubicación."
+        );
+
+        return;
+    }
+
+
+    if (!descripcion) {
+
+        alert(
+            "💌 Escribí algo en el recuerdo."
+        );
+
+        return;
+    }
+
+
+    const cantidadArchivos =
+        archivosExistentes.length +
+        archivosSeleccionados.length;
+
+
+    if (
+        cantidadArchivos > 3
+    ) {
+
+        alert(
+            "❤️ Máximo 3 archivos por recuerdo."
+        );
+
+        return;
+    }
+
+
+    btnGuardar.disabled = true;
+
+    btnGuardar.textContent =
+        "⏳ Guardando...";
+
+
+    try {
+
+        let archivosFinales = [
+            ...archivosExistentes
+        ];
+
+
+        /* =================================================
+           SUBIR ARCHIVOS NUEVOS
+        ================================================= */
+
+        for (
+            const archivo
+            of archivosSeleccionados
+        ) {
+
+            console.log(
+                "Subiendo archivo:",
+                archivo.name
+            );
+
+
+            const archivoSubido =
+                await subirArchivo(
+                    archivo
+                );
+
+
+            console.log(
+                "Archivo subido:",
+                archivoSubido
+            );
+
+
+            archivosFinales.push(
+                archivoSubido
+            );
+        }
+
+
+        console.log(
+            "Archivos finales:",
+            archivosFinales
+        );
+
+
+        /* =================================================
+           EDITAR O CREAR
+        ================================================= */
+
+        if (
+            recuerdoEditando
+        ) {
+
+            console.log(
+                "Actualizando recuerdo:",
+                recuerdoEditando.id
+            );
+
+
+            await actualizarRecuerdo(
+                recuerdoEditando.id,
+                {
+                    fecha,
+                    ubicacion,
+                    descripcion,
+                    archivos:
+                        archivosFinales
+                }
+            );
+
+        } else {
+
+            console.log(
+                "Creando nuevo recuerdo..."
+            );
+
+
+            await crearRecuerdo(
+                {
+                    fecha,
+                    ubicacion,
+                    descripcion,
+                    archivos:
+                        archivosFinales
+                }
+            );
+        }
+
+
+        console.log(
+            "✅ GUARDADO CORRECTAMENTE"
+        );
+
+
+        alert(
+            "❤️ ¡Recuerdo guardado correctamente!"
+        );
+
+
+        cerrarFormulario();
+
+
+        await cargarRecuerdos();
+
+
+    } catch (error) {
+
+        console.error(
+            "================================="
+        );
+
+        console.error(
+            "ERROR AL GUARDAR RECUERDO:"
+        );
+
+        console.error(
+            error
+        );
+
+        console.error(
+            "================================="
+        );
+
+
+        alert(
+            "❌ No se pudo guardar el recuerdo.\n\n" +
+            error.message
+        );
+
+
+    } finally {
+
+        btnGuardar.disabled = false;
+
+
+        btnGuardar.textContent =
+            recuerdoEditando
+                ? "❤️ Guardar cambios"
+                : "❤️ Guardar recuerdo";
+    }
+}
+
+
+/* =====================================================
+   SUBIR ARCHIVO
+===================================================== */
+
+async function subirArchivo(
+    archivo
+) {
+
+    if (!usuarioActual) {
+
+        throw new Error(
+            "No estás autorizado para subir archivos."
+        );
+    }
+
+
+    const extension =
+        obtenerExtension(
+            archivo.name
+        );
+
+
+    const nombreUnico =
+        `${Date.now()}-${Math.random()
+            .toString(36)
+            .substring(
+                2,
+                10
+            )}.${extension}`;
+
+
+    const ruta =
+        `recuerdos/${nombreUnico}`;
+
+
+    console.log(
+        "Intentando subir:",
+        ruta
+    );
+
+
+    const {
+        data,
+        error
+    } =
+        await supabaseClient
+            .storage
+            .from(
+                NOMBRE_BUCKET
+            )
+            .upload(
+                ruta,
+                archivo,
+                {
+                    cacheControl:
+                        "3600",
+
+                    upsert:
+                        false,
+
+                    contentType:
+                        archivo.type
+                }
+            );
+
+
+    if (error) {
+
+        console.error(
+            "Error subiendo archivo:",
+            error
+        );
+
+
+        throw new Error(
+            "No se pudo subir el archivo: " +
+            error.message
+        );
+    }
+
+
+    console.log(
+        "Archivo subido correctamente:",
+        data
+    );
+
+
+    const {
+        data: publicData
+    } =
+        supabaseClient
+            .storage
+            .from(
+                NOMBRE_BUCKET
+            )
+            .getPublicUrl(
+                data.path
+            );
+
+
+    return {
+
+        nombre:
+            archivo.name,
+
+        ruta:
+            data.path,
+
+        url:
+            publicData.publicUrl,
+
+        tipo:
+            archivo.type.startsWith(
+                "video/"
+            )
+                ? "video"
+                : "imagen"
+    };
+}
+
+
+/* =====================================================
+   CREAR RECUERDO
+===================================================== */
+
+async function crearRecuerdo(
+    recuerdo
+) {
+
+    if (!usuarioActual) {
+
+        throw new Error(
+            "No estás autorizado para crear recuerdos."
+        );
+    }
+
+
+    console.log(
+        "================================="
+    );
+
+    console.log(
+        "INTENTANDO GUARDAR RECUERDO EN SUPABASE"
+    );
+
+    console.log(
+        "Usuario:",
+        usuarioActual.email
+    );
+
+    console.log(
+        "Datos:",
+        recuerdo
+    );
+
+    console.log(
+        "================================="
+    );
+
+
+    const {
+        data,
+        error
+    } =
+        await supabaseClient
+            .from("recuerdos")
+            .insert([
+                {
+
+                    fecha:
+                        recuerdo.fecha,
+
+                    ubicacion:
+                        recuerdo.ubicacion,
+
+                    descripcion:
+                        recuerdo.descripcion,
+
+                    archivos:
+                        recuerdo.archivos
+
+                }
+            ])
+            .select();
+
+
+    console.log(
+        "Respuesta de Supabase:",
+        {
+            data,
+            error
+        }
+    );
+
+
+    if (error) {
+
+        console.error(
+            "================================="
+        );
+
+        console.error(
+            "ERROR COMPLETO DE SUPABASE:"
+        );
+
+        console.error(
+            error
+        );
+
+        console.error(
+            "================================="
+        );
+
+
+        throw new Error(
+            `Supabase rechazó el guardado.
+
+Código: ${error.code || "sin código"}
+
+Mensaje: ${error.message}
+
+Detalle: ${error.details || "sin detalle"}
+
+Hint: ${error.hint || "sin información"}`
+        );
+    }
+
+
+    if (
+        !data ||
+        data.length === 0
+    ) {
+
+        throw new Error(
+            "Supabase no devolvió el registro creado."
+        );
+    }
+
+
+    console.log(
+        "✅ RECUERDO GUARDADO CORRECTAMENTE:",
+        data[0]
+    );
+
+
+    return data[0];
+}
+
+
+/* =====================================================
+   ACTUALIZAR RECUERDO
+===================================================== */
+
+async function actualizarRecuerdo(
+    id,
+    recuerdo
+) {
+
+    if (!usuarioActual) {
+
+        throw new Error(
+            "No estás autorizado para editar recuerdos."
+        );
+    }
+
+
+    const {
+        error
+    } =
+        await supabaseClient
+            .from("recuerdos")
+            .update({
+
+                fecha:
+                    recuerdo.fecha,
+
+                ubicacion:
+                    recuerdo.ubicacion,
+
+                descripcion:
+                    recuerdo.descripcion,
+
+                archivos:
+                    recuerdo.archivos
+
+            })
+            .eq(
+                "id",
+                id
+            );
+
+
+    if (error) {
+
+        throw new Error(
+            "No se pudo actualizar el recuerdo: " +
+            error.message
+        );
+    }
+}
+
+
+/* =====================================================
+   EDITAR RECUERDO
+===================================================== */
+
+function editarRecuerdo(
+    recuerdo
+) {
+
+    if (!usuarioActual) {
+
+        abrirLogin();
+
+        return;
+    }
+
+
+    recuerdoEditando =
+        recuerdo;
+
+
+    fechaInput.value =
+        recuerdo.fecha || "";
+
+
+    ubicacionInput.value =
+        recuerdo.ubicacion || "";
+
+
+    descripcionInput.value =
+        recuerdo.descripcion || "";
+
+
+    archivosSeleccionados =
+        [];
+
+
+    archivosExistentes =
+        Array.isArray(
+            recuerdo.archivos
+        )
+            ? [
+                ...recuerdo.archivos
+            ]
+            : [];
+
+
+    tituloFormulario.textContent =
+        "✏️ Editar recuerdo";
+
+
+    btnGuardar.textContent =
+        "❤️ Guardar cambios";
+
+
+    mostrarVistaPrevia();
+
+
+    formularioSeccion.classList.remove(
+        "oculto"
+    );
+
+
+    formularioSeccion.scrollIntoView({
+        behavior: "smooth"
+    });
+}
+
+
+/* =====================================================
+   ELIMINAR RECUERDO
+===================================================== */
+
+async function eliminarRecuerdo(
+    recuerdo
+) {
+
+    if (!usuarioActual) {
+
+        abrirLogin();
+
+        return;
+    }
+
+
+    const confirmar =
+        confirm(
+            "¿Querés eliminar este recuerdo? ❤️\n\nEsta acción no se puede deshacer."
+        );
+
+
+    if (!confirmar) {
+
+        return;
+    }
+
+
+    try {
+
+        const archivos =
+            Array.isArray(
+                recuerdo.archivos
+            )
+                ? recuerdo.archivos
+                : [];
+
+
+        const rutas =
+            archivos
+                .map(
+                    archivo =>
+                        archivo.ruta
+                )
+                .filter(
+                    Boolean
+                );
+
+
+        if (
+            rutas.length > 0
+        ) {
+
+            const {
+                error:
+                    errorArchivos
+            } =
+                await supabaseClient
+                    .storage
+                    .from(
+                        NOMBRE_BUCKET
+                    )
+                    .remove(
+                        rutas
+                    );
+
+
+            if (
+                errorArchivos
+            ) {
+
+                console.error(
+                    "Error eliminando archivos:",
+                    errorArchivos
+                );
+            }
+        }
+
+
+        const {
+            error
+        } =
+            await supabaseClient
+                .from(
+                    "recuerdos"
+                )
+                .delete()
+                .eq(
+                    "id",
+                    recuerdo.id
+                );
+
+
+        if (error) {
+
+            throw new Error(
+                "No se pudo eliminar el recuerdo: " +
+                error.message
+            );
+        }
+
+
+        await cargarRecuerdos();
+
+
+        const totalPaginas =
+            Math.max(
+                1,
+                Math.ceil(
+                    recuerdos.length /
+                    RECUERDOS_POR_PAGINA
+                )
+            );
+
+
+        if (
+            paginaActual >
+            totalPaginas
+        ) {
+
+            paginaActual =
+                totalPaginas;
+
+            mostrarRecuerdos();
+        }
+
+
+    } catch (error) {
+
+        console.error(
+            error
+        );
+
+
+        alert(
+            "❌ No se pudo eliminar:\n\n" +
+            error.message
+        );
+    }
+}
+
+
+/* =====================================================
+   PAGINACIÓN
+===================================================== */
+
+function mostrarPaginacion() {
+
+    paginacion.innerHTML = "";
+
+
+    const totalPaginas =
+        Math.ceil(
+            recuerdos.length /
+            RECUERDOS_POR_PAGINA
+        );
+
+
+    if (
+        totalPaginas <= 1
+    ) {
+
+        return;
+    }
+
+
+    const anterior =
+        document.createElement(
+            "button"
+        );
+
+
+    anterior.className =
+        "btn-pagina";
+
+
+    anterior.textContent =
+        "‹";
+
+
+    anterior.disabled =
+        paginaActual === 1;
+
+
+    anterior.addEventListener(
+        "click",
+        () => {
+
+            if (
+                paginaActual > 1
+            ) {
+
+                paginaActual--;
+
+                mostrarRecuerdos();
+
+                window.scrollTo({
+                    top: 400,
+                    behavior: "smooth"
+                });
+            }
+        }
+    );
+
+
+    paginacion.appendChild(
+        anterior
+    );
+
+
+    for (
+        let i = 1;
+        i <= totalPaginas;
+        i++
+    ) {
+
+        const boton =
+            document.createElement(
+                "button"
+            );
+
+
+        boton.className =
+            "btn-pagina";
+
+
+        if (
+            i === paginaActual
+        ) {
+
+            boton.classList.add(
+                "activa"
+            );
+        }
+
+
+        boton.textContent =
+            i;
+
+
+        boton.addEventListener(
+            "click",
+            () => {
+
+                paginaActual =
+                    i;
+
+                mostrarRecuerdos();
+
+                window.scrollTo({
+                    top: 400,
+                    behavior: "smooth"
+                });
+            }
+        );
+
+
+        paginacion.appendChild(
+            boton
+        );
+    }
+
+
+    const siguiente =
+        document.createElement(
+            "button"
+        );
+
+
+    siguiente.className =
+        "btn-pagina";
+
+
+    siguiente.textContent =
+        "›";
+
+
+    siguiente.disabled =
+        paginaActual ===
+        totalPaginas;
+
+
+    siguiente.addEventListener(
+        "click",
+        () => {
+
+            if (
+                paginaActual <
+                totalPaginas
+            ) {
+
+                paginaActual++;
+
+                mostrarRecuerdos();
+
+                window.scrollTo({
+                    top: 400,
+                    behavior: "smooth"
+                });
+            }
+        }
+    );
+
+
+    paginacion.appendChild(
+        siguiente
+    );
+}
+
+
+/* =====================================================
+   FORMATEAR FECHA
+===================================================== */
+
+function formatearFecha(
+    fecha
+) {
+
+    if (!fecha) {
+
+        return "";
+    }
+
+
+    const partes =
+        fecha.split("-");
+
+
+    if (
+        partes.length !== 3
+    ) {
+
+        return fecha;
+    }
+
+
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+
+/* =====================================================
+   EXTENSIÓN
+===================================================== */
+
+function obtenerExtension(
+    nombre
+) {
+
+    const partes =
+        nombre.split(".");
+
+
+    if (
+        partes.length === 1
+    ) {
+
+        return "bin";
+    }
+
+
+    return partes
+        .pop()
+        .toLowerCase();
+}
+
+
+/* =====================================================
+   SEGURIDAD HTML
+===================================================== */
+
+function escapeHTML(
+    texto
+) {
+
+    const div =
+        document.createElement(
+            "div"
+        );
+
+
+    div.textContent =
+        texto ?? "";
+
+
+    return div.innerHTML;
+}
+
+
+function escapeAttribute(
+    texto
+) {
+
+    return String(
+        texto ?? ""
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        );
+}
